@@ -23,7 +23,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('/img/bj.jpg');
+            background-image: url('../img/bj.jpg');
             background-size: cover;
             background-position: center;
             filter: blur(20px) brightness(0.7);
@@ -239,7 +239,7 @@
                 const onCount = lights.filter(light => light).length;
                 gameInfoElement.textContent = `已点亮: ${onCount}/9`;
                 if (onCount === 9) {
-                    gameInfoElement.innerHTML = `🎉 恭喜！全部点亮！`;
+                    gameInfoElement.textContent = '恭喜！全部点亮！';
                     gameInfoElement.style.color = '#2ecc71';
                 } else {
                     gameInfoElement.style.color = '#fff';

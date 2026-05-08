@@ -24,7 +24,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('/img/bj.jpg');
+            background-image: url('../img/bj.jpg');
             background-size: cover;
             background-position: center;
             filter: blur(20px) brightness(0.7);
@@ -237,7 +237,7 @@
 <body>
     <div class="bg-layer"></div>
     <main>
-        <h2>📚 阅读去重工具</h2>
+        <h2>阅读去重工具</h2>
         <div class="upload-area" id="dropZone">
             <input type="file" id="fileInput" accept=".json" multiple>
             <label for="fileInput" class="upload-button">
@@ -266,16 +266,19 @@
     </main>
     <script>
         let currentDedupeResult = null;
-        const emojiRegex = /[\p{Emoji}\u{200B}-\u{200D}\u{FEFF}]/gu;
-        const cleanEmojis = (str) => typeof str === 'string' ? str.replace(emojiRegex, '').replace(/\s{2,}/g, ' ').trim() : str;
+        const decorativeRegex = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{200B}-\u{200D}\u{FEFF}]/gu;
+        const cleanText = (str) => typeof str === 'string' ? str.replace(decorativeRegex, '').replace(/\s{2,}/g, ' ').trim() : str;
+        const escapeHtml = (value) => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
         const deduplicate = (data) => {
             const domainMap = new Map(), validSources = [], errors = [];
+            let duplicates = 0;
             data.forEach((source, index) => {
                 try {
-                    const cleanedSource = { ...source, bookSourceUrl: cleanEmojis(source.bookSourceUrl), bookSourceName: cleanEmojis(source.bookSourceName) };
+                    const cleanedSource = { ...source, bookSourceUrl: cleanText(source.bookSourceUrl), bookSourceName: cleanText(source.bookSourceName) };
                     const url = new URL(cleanedSource.bookSourceUrl);
                     const domain = url.hostname.replace(/^www\./i, '');
                     if (!domainMap.has(domain)) { domainMap.set(domain, true); validSources.push(cleanedSource); }
+                    else { duplicates++; }
                 } catch { errors.push(`行 ${index + 1}: 无效URL - ${source.bookSourceUrl}`); }
             });
             const date = new Date(), dateString = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
@@ -285,7 +288,7 @@
                 const combinedGroup = originalGroup ? `${originalGroup},${newGroup}` : newGroup;
                 return { ...item, bookSourceGroup: combinedGroup };
             });
-            return { result: processedData, stats: { total: data.length, duplicates: data.length - validSources.length, errors: errors.length }, errors };
+            return { result: processedData, stats: { total: data.length, duplicates, errors: errors.length }, errors };
         };
         const readFileAsJson = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -293,14 +296,70 @@
             reader.onerror = () => reject(new Error('文件读取错误'));
             reader.readAsText(file);
         });
-        const generateResultHTML = (result, stats, errors, failedList, failedLabel) => {
+        const proxyConfigs = [
+            { wrap: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+            { wrap: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}` },
+            { wrap: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, unwrap: true },
+            { wrap: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` },
+            { wrap: (url) => `https://thingproxy.freeboard.io/fetch/${encodeURI(url)}` },
+        ];
+        const isDirectUrl = (v) => typeof v === 'string' && /^https?:\/\//i.test(v.trim());
+        const extractDirectUrl = (obj) => {
+            if (!obj || typeof obj !== 'object') return '';
+            return obj.msg || obj.downloadUrl || obj.url || '';
+        };
+        const parseJsonSafe = (text) => { try { return JSON.parse(text); } catch { throw new Error('返回内容不是有效JSON'); } };
+        const fetchWithTimeout = async (url, ms = 10000) => {
+            const ac = new AbortController();
+            const t = setTimeout(() => ac.abort(), ms);
+            try { return await fetch(url, { signal: ac.signal, cache: 'no-store' }); } finally { clearTimeout(t); }
+        };
+        const fetchArrayFromUrl = async (url, seen = new Set()) => {
+            if (seen.has(url)) throw new Error('直链解析出现循环引用');
+            seen.add(url);
+            const res = await fetchWithTimeout(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const text = await res.text();
+            const parsed = parseJsonSafe(text);
+            if (Array.isArray(parsed)) return parsed;
+            const direct = extractDirectUrl(parsed);
+            if (isDirectUrl(direct) && direct.trim() !== url) return await fetchArrayFromUrl(direct.trim(), seen);
+            throw new Error('返回的不是JSON数组，也未发现直链字段');
+        };
+        const fetchSourceJson = async (rawUrl) => {
+            const originalUrl = rawUrl.trim();
+            const errors = [];
+            try { return { data: await fetchArrayFromUrl(originalUrl), resolvedUrl: originalUrl }; } catch (e) { errors.push(`直连: ${e.message}`); }
+            for (const proxy of proxyConfigs) {
+                const proxyUrl = proxy.wrap(originalUrl);
+                try {
+                    const res = await fetchWithTimeout(proxyUrl);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    let text = await res.text();
+                    if (proxy.unwrap) { const wrapper = parseJsonSafe(text); text = typeof wrapper.contents === 'string' ? wrapper.contents : text; }
+                    const parsed = parseJsonSafe(text);
+                    if (Array.isArray(parsed)) return { data: parsed, resolvedUrl: proxyUrl };
+                    const direct = extractDirectUrl(parsed);
+                    if (isDirectUrl(direct)) {
+                        const directData = await fetchArrayFromUrl(direct.trim());
+                        return { data: directData, resolvedUrl: direct.trim() };
+                    }
+                    errors.push(`${new URL(proxyUrl).hostname}: 返回非数组且无直链`);
+                } catch (err) { errors.push(`${new URL(proxyUrl).hostname}: ${err.message}`); }
+            }
+            throw new Error(errors.join('；'));
+        };
+        const generateResultHTML = (result, stats, errors, resolvedList, failedList) => {
             const date = new Date(), dateStr = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
             let html = `<div class="stats"><div class="stat-item"><div>原始数量</div><div style="font-size:1.5em;">${stats.total}</div></div><div class="stat-item"><div>重复数量</div><div style="color:${stats.duplicates ? '#ff5252' : '#4CAF50'};font-size:1.5em;">${stats.duplicates}</div></div><div class="stat-item"><div>有效数量</div><div style="font-size:1.5em;">${result.length}</div></div><div class="stat-item"><div>错误条目</div><div style="color:${stats.errors ? '#ff5252' : '#4CAF50'};font-size:1.5em;">${stats.errors}</div></div></div>`;
+            if (resolvedList.length) {
+                html += `<div style="color:#4CAF50;padding:0.8rem;background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3);border-radius:8px;margin-bottom:1rem;"><strong>成功解析 ${resolvedList.length} 个URL:</strong><div style="margin-top:0.5rem;font-size:0.9em;">${resolvedList.slice(0,5).map(escapeHtml).join('<br>')}${resolvedList.length > 5 ? '<br>...' : ''}</div></div>`;
+            }
             if (failedList.length) {
-                html += `<div class="error-box"><strong>有 ${failedList.length} 个${failedLabel}:</strong><div style="margin-top:0.8rem;">${failedList.slice(0,3).join('<br>')}${failedList.length > 3 ? '<br>...更多错误详见控制台' : ''}</div></div>`;
+                html += `<div class="error-box"><strong>有 ${failedList.length} 个URL加载失败:</strong><div style="margin-top:0.8rem;">${failedList.slice(0,3).map(escapeHtml).join('<br>')}${failedList.length > 3 ? '<br>...更多错误详见控制台' : ''}</div></div>`;
             }
             if (errors.length) {
-                html += `<div class="error-box"><strong>发现 ${errors.length} 个错误:</strong><div style="margin-top:0.8rem;">${errors.slice(0,3).join('<br>')}${errors.length > 3 ? '<br>...更多错误详见控制台' : ''}</div></div>`;
+                html += `<div style="color:#ff9800;padding:0.8rem;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.3);border-radius:8px;"><strong>跳过 ${errors.length} 个无效书源（bookSourceUrl不是合法URL）:</strong><div style="margin-top:0.8rem;">${errors.slice(0,3).map(escapeHtml).join('<br>')}${errors.length > 3 ? '<br>...更多详见控制台' : ''}</div></div>`;
             }
             if (result.length) {
                 html += `<button class="download-btn" data-download><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5l-1.3-1.3a1 1 0 0 1 1.4-1.4l2.9 2.9V6a1 1 0 1 1 2 0v7.2l2.9-2.9a1 1 0 1 1 1.4 1.4L19 13z"/></svg>下载去重文件</button><div class="download-note">若浏览器未弹出保存窗口或文件名不正确，请手动重命名为「去重_${result.length}_${dateStr}」</div>`;
@@ -323,7 +382,7 @@
             if (allData.length === 0) { resultArea.innerHTML = `<div class="error-box">所有文件都处理失败</div>`; currentDedupeResult = null; return; }
             const { result, stats, errors } = deduplicate(allData);
             currentDedupeResult = result;
-            resultArea.innerHTML = generateResultHTML(result, stats, errors, failedFiles, '文件处理失败');
+            resultArea.innerHTML = generateResultHTML(result, stats, errors, [], failedFiles);
             if(errors.length) console.warn('完整错误列表:', errors);
             if(failedFiles.length) console.warn('处理失败的文件:', failedFiles);
         };
@@ -333,21 +392,20 @@
             if (urls.length === 0) { resultArea.innerHTML = `<div class="error-box">请输入至少一个有效的JSON文件URL</div>`; return; }
             resultArea.innerHTML = `<div class="stat-item">正在加载网络文件...</div>`;
             document.getElementById('urlModal').style.display = 'none';
-            let allData = [], failedUrls = [];
+            let allData = [], resolvedUrls = [], failedUrls = [];
             for (const url of urls) {
                 try {
-                    const response = await fetch(url.trim());
-                    if (!response.ok) { failedUrls.push(`${url} - HTTP错误: ${response.status}`); continue; }
-                    const data = await response.json();
-                    if (Array.isArray(data)) allData = allData.concat(data);
-                    else failedUrls.push(`${url} - 返回的不是JSON数组`);
+                    const { data, resolvedUrl } = await fetchSourceJson(url);
+                    allData = allData.concat(data);
+                    resolvedUrls.push(resolvedUrl !== url.trim() ? `${url} -> ${resolvedUrl}` : url);
                 } catch (err) { failedUrls.push(`${url} - ${err.message}`); }
             }
             if (allData.length === 0) { resultArea.innerHTML = `<div class="error-box">所有URL都加载失败</div>`; currentDedupeResult = null; if (failedUrls.length) console.warn('加载失败的URL:', failedUrls); return; }
             const { result, stats, errors } = deduplicate(allData);
             currentDedupeResult = result;
-            resultArea.innerHTML = generateResultHTML(result, stats, errors, failedUrls, 'URL加载失败');
-            if(errors.length) console.warn('完整错误列表:', errors);
+            resultArea.innerHTML = generateResultHTML(result, stats, errors, resolvedUrls, failedUrls);
+            if(resolvedUrls.length) console.warn('成功解析的URL:', resolvedUrls);
+            if(errors.length) console.warn('无效书源列表:', errors);
             if(failedUrls.length) console.warn('加载失败的URL:', failedUrls);
         };
         document.getElementById('fileInput').addEventListener('change', e => { if (e.target.files.length > 0) processFiles(e.target.files); });

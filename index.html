@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>呱呱-个人引导页</title>
-<script src="https://image.uc.cn/s/uae/g/3n/mos-production/0915/3.4.17.js"></script>
-<script src="https://image.uc.cn/s/uae/g/3n/mos-production/fontawesome-free-7.1.0-web/js/all.min.js"></script>
 <style>
 body, html {
     margin: 0;
@@ -45,7 +43,7 @@ body.dark {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/img/bj.jpg');
+    background-image: url('./img/bj.jpg');
     background-size: cover;
     background-position: center;
     filter: blur(20px) brightness(0.7);
@@ -69,6 +67,10 @@ body.dark {
 }
 .theme-toggle:hover {
     transform: scale(1.1);
+}
+.theme-icon {
+    font-size: 0.95rem;
+    font-weight: 700;
 }
 .container {
     max-width: 1200px;
@@ -115,7 +117,21 @@ body.dark {
 }
 .link-icon {
     font-size: 2.5rem;
+    font-weight: 700;
     margin-bottom: 15px;
+}
+.title-main {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+}
+.title-tip {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 10px;
+    font-size: 1.125rem;
 }
 .link-title {
     font-size: 1.3rem;
@@ -159,44 +175,47 @@ body.dark {
 <body class="light">
 <div class="bg-layer"></div>
 <div class="theme-toggle glass" id="themeToggle">
-    <i class="fas fa-moon"></i>
+    <span class="theme-icon" id="themeIcon">深</span>
 </div>
 <div class="container">
     <div class="header">
         <div class="avatar">
-            <img src="/gua/img/xz.gif" alt="头像" style="width:100%;height:100%;object-fit:cover;">
+            <img src="./img/xz.gif" alt="头像" style="width:100%;height:100%;object-fit:cover;">
         </div>
-        <h1 class="text-4xl font-bold mb-4 glass" style="display:inline-block;padding:15px 30px;">呱呱-个人引导页</h1>
-        <p class="text-lg glass" style="display:inline-block;padding:10px 20px;margin-top:10px;">📢 Ctrl+D 收藏本页到浏览器收藏夹</p>
+        <h1 class="title-main glass">呱呱-个人引导页</h1>
+        <p class="title-tip glass">Ctrl+D 收藏本页到浏览器收藏夹</p>
     </div>
     <div class="links-grid">
-        <a href="/gua/Reading/yuedu.html" class="link-card glass">
-            <div class="link-icon"><i class="fas fa-book-open"></i></div>
+        <a href="./Reading/yuedu.html" class="link-card glass">
+            <div class="link-icon">书</div>
             <div class="link-title">阅读书源去重</div>
             <div class="link-desc">整理与优化你的阅读资源，去除重复书源，提升阅读体验</div>
         </a>
-        <a href="/gua/DS/mfgy.html" class="link-card glass">
-            <div class="link-icon"><i class="fas fa-magic"></i></div>
+        <a href="./DS/mfgy.html" class="link-card glass">
+            <div class="link-icon">解</div>
             <div class="link-title">魔法工艺解密</div>
             <div class="link-desc">九宫格熄灯小游戏解密工具，包含随机生成与自动求解功能</div>
         </a>
 </div>
+    <footer class="footer">© 呱呱</footer>
+</div>
 <script>
 const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
 const body = document.body;
-const savedTheme = localStorage.getItem('theme') || 'light';
+const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+body.classList.remove('light', 'dark');
 body.classList.add(savedTheme);
 updateToggleIcon();
 function updateToggleIcon() {
-    const icon = themeToggle.querySelector('i');
     if (body.classList.contains('dark')) {
-        icon.className = 'fas fa-sun';
+        themeIcon.textContent = '☀️';
         document.querySelectorAll('.glass').forEach(el => {
             el.classList.add('glass-dark');
             el.classList.remove('glass');
         });
     } else {
-        icon.className = 'fas fa-moon';
+        themeIcon.textContent = '🌙';
         document.querySelectorAll('.glass-dark').forEach(el => {
             el.classList.add('glass');
             el.classList.remove('glass-dark');
@@ -217,19 +236,12 @@ themeToggle.addEventListener('click', () => {
 });
 window.addEventListener('storage', (e) => {
     if (e.key === 'theme') {
-        body.className = e.newValue;
+        body.classList.remove('light', 'dark');
+        body.classList.add(e.newValue || 'light');
         updateToggleIcon();
     }
 });
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-if (!localStorage.getItem('theme')) {
-    if (mediaQuery.matches) {
-        body.classList.add('dark');
-        body.classList.remove('light');
-        localStorage.setItem('theme', 'dark');
-    }
-    updateToggleIcon();
-}
 mediaQuery.addEventListener('change', (e) => {
     if (!localStorage.getItem('theme')) {
         if (e.matches) {
