@@ -3,8 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>呱呱-个人引导页</title>
+<title>呱呱工具页 — 阅读书源去重 & 魔法工艺解密</title>
+<meta name="description" content="呱呱个人工具集合：阅读书源去重工具（支持本地/网络源导入、按域名去重）、魔法工艺九宫格熄灯解密工具">
+<meta property="og:title" content="呱呱工具页">
+<meta property="og:description" content="阅读书源去重 & 魔法工艺解密工具集">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://git.mina369.top/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐸</text></svg>">
 <style>
+:root {
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --text-color: #333;
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-blur-brightness: brightness(0.95);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+body.dark {
+    --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --text-color: #eee;
+    --glass-bg: rgba(0, 0, 0, 0.25);
+    --glass-blur-brightness: brightness(0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
 body, html {
     margin: 0;
     padding: 0;
@@ -12,29 +34,15 @@ body, html {
     font-family: system-ui, -apple-system, sans-serif;
     transition: background-color 0.5s ease, color 0.5s ease;
     overflow-x: hidden;
-}
-body.light {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    color: #333;
-}
-body.dark {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #eee;
+    background: var(--bg-gradient);
+    color: var(--text-color);
 }
 .glass {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px) saturate(180%) brightness(0.95);
-    -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-}
-.glass-dark {
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(12px) saturate(180%) brightness(0.8);
-    -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) saturate(180%) var(--glass-blur-brightness);
+    -webkit-backdrop-filter: blur(12px) saturate(180%) var(--glass-blur-brightness);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     border-radius: 20px;
 }
 .bg-layer {
@@ -114,6 +122,7 @@ body.dark {
 }
 .link-card:hover {
     transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
 }
 .link-icon {
     font-size: 2.5rem;
@@ -174,93 +183,56 @@ body.dark {
 </head>
 <body class="light">
 <div class="bg-layer"></div>
-<div class="theme-toggle glass" id="themeToggle">
-    <span class="theme-icon" id="themeIcon">深</span>
+<div class="theme-toggle glass" id="themeToggle" role="button" tabindex="0" aria-label="切换深色/浅色主题">
+    <span class="theme-icon" id="themeIcon" aria-hidden="true">深</span>
 </div>
-<div class="container">
-    <div class="header">
+<main class="container">
+    <header class="header">
         <div class="avatar">
             <img src="./img/xz.gif" alt="头像" style="width:100%;height:100%;object-fit:cover;">
         </div>
         <h1 class="title-main glass">呱呱-个人引导页</h1>
         <p class="title-tip glass">Ctrl+D 收藏本页到浏览器收藏夹</p>
-    </div>
-    <div class="links-grid">
+    </header>
+    <nav class="links-grid" aria-label="工具导航">
         <a href="./Reading/yuedu.html" class="link-card glass">
-            <div class="link-icon">书</div>
+            <div class="link-icon" aria-hidden="true">书</div>
             <div class="link-title">阅读书源去重</div>
             <div class="link-desc">整理与优化你的阅读资源，去除重复书源，提升阅读体验</div>
         </a>
         <a href="./DS/mfgy.html" class="link-card glass">
-            <div class="link-icon">解</div>
+            <div class="link-icon" aria-hidden="true">解</div>
             <div class="link-title">魔法工艺解密</div>
             <div class="link-desc">九宫格熄灯小游戏解密工具，包含随机生成与自动求解功能</div>
         </a>
-</div>
+    </nav>
     <footer class="footer">© 呱呱</footer>
-</div>
+</main>
 <script>
 const themeToggle = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 const body = document.body;
-const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-body.classList.remove('light', 'dark');
-body.classList.add(savedTheme);
-updateToggleIcon();
-function updateToggleIcon() {
-    if (body.classList.contains('dark')) {
-        themeIcon.textContent = '☀️';
-        document.querySelectorAll('.glass').forEach(el => {
-            el.classList.add('glass-dark');
-            el.classList.remove('glass');
-        });
-    } else {
-        themeIcon.textContent = '🌙';
-        document.querySelectorAll('.glass-dark').forEach(el => {
-            el.classList.add('glass');
-            el.classList.remove('glass-dark');
-        });
-    }
+
+function setTheme(theme) {
+    body.classList.toggle('dark', theme === 'dark');
+    themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
 }
+
+const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+setTheme(savedTheme);
+
 themeToggle.addEventListener('click', () => {
-    if (body.classList.contains('dark')) {
-        body.classList.remove('dark');
-        body.classList.add('light');
-        localStorage.setItem('theme', 'light');
-    } else {
-        body.classList.remove('light');
-        body.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-    }
-    updateToggleIcon();
+    const next = body.classList.contains('dark') ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('theme', next);
 });
+
 window.addEventListener('storage', (e) => {
-    if (e.key === 'theme') {
-        body.classList.remove('light', 'dark');
-        body.classList.add(e.newValue || 'light');
-        updateToggleIcon();
-    }
+    if (e.key === 'theme') setTheme(e.newValue || 'light');
 });
-const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-mediaQuery.addEventListener('change', (e) => {
-    if (!localStorage.getItem('theme')) {
-        if (e.matches) {
-            body.classList.add('dark');
-            body.classList.remove('light');
-        } else {
-            body.classList.add('light');
-            body.classList.remove('dark');
-        }
-        updateToggleIcon();
-    }
-});
-document.querySelectorAll('.link-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-        card.style.boxShadow = '0 15px 40px rgba(0, 0, 0, 0.2)';
-    });
-    card.addEventListener('mouseleave', () => {
-        card.style.boxShadow = '';
-    });
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) setTheme(e.matches ? 'dark' : 'light');
 });
 </script>
 </body>

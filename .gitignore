@@ -1,0 +1,17 @@
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# 个人游戏存档（加密数据，不应公开）
+mf/*.json
+
+# 大图原始文件（如需压缩，保留压缩后版本即可）
+# img/*.jpg
+# img/*.gif

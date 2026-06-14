@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>阅读去重工具</title>
+    <title>阅读书源去重工具 — 呱呱工具页</title>
+    <meta name="description" content="阅读书源去重工具：支持本地JSON文件拖拽/多选、网络URL导入，自动按域名去重，生成去重后JSON文件下载。">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐸</text></svg>">
     <style>
         :root { --primary-color: #2196F3; --success-color: #4CAF50; --error-color: #f44336; }
         body {
@@ -329,7 +331,7 @@
         const fetchSourceJson = async (rawUrl) => {
             const originalUrl = rawUrl.trim();
             const errors = [];
-            try { return { data: await fetchArrayFromUrl(originalUrl), resolvedUrl: originalUrl }; } catch (e) { errors.push(`直连: ${e.message}`); }
+            try { return { data: await fetchArrayFromUrl(originalUrl), resolvedUrl: originalUrl }; } catch (e) { errors.push(`直连失败`); }
             for (const proxy of proxyConfigs) {
                 const proxyUrl = proxy.wrap(originalUrl);
                 try {
@@ -344,10 +346,12 @@
                         const directData = await fetchArrayFromUrl(direct.trim());
                         return { data: directData, resolvedUrl: direct.trim() };
                     }
-                    errors.push(`${new URL(proxyUrl).hostname}: 返回非数组且无直链`);
-                } catch (err) { errors.push(`${new URL(proxyUrl).hostname}: ${err.message}`); }
+                    errors.push(`代理 ${errors.length + 1}: 返回格式不符`);
+                } catch (err) { errors.push(`代理 ${errors.length + 1}: 请求失败`); }
             }
-            throw new Error(errors.join('；'));
+            // 详细错误输出到控制台，用户看到友好提示
+            console.warn(`[${originalUrl}] 加载失败详情:`, errors);
+            throw new Error(`无法从该地址获取数据，已尝试直连和 ${proxyConfigs.length} 个代理，均失败。详见控制台。`);
         };
         const generateResultHTML = (result, stats, errors, resolvedList, failedList) => {
             const date = new Date(), dateStr = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;

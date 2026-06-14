@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法工艺九宫格熄灯小游戏解密工具</title>
+    <title>魔法工艺解密 — 九宫格熄灯游戏求解器</title>
+    <meta name="description" content="魔法工艺九宫格熄灯小游戏解密工具：支持随机模式练习、自定义模式设置、一键高斯消元法自动求解。">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐸</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { 
@@ -192,16 +194,22 @@
             <div class="solution-steps" id="solutionSteps">点击解密可获取解密步骤</div>
         </div>
         <div class="mode">
-            <button class="mode-btn active" id="randomModeBtn">随机模式练习室</button>
-            <button class="mode-btn" id="customModeBtn">游戏内当前设置</button>
+            <button class="mode-btn active" id="randomModeBtn" aria-pressed="true">随机模式练习室</button>
+            <button class="mode-btn" id="customModeBtn" aria-pressed="false">游戏内当前设置</button>
         </div>
         <div class="controls">
-            <button class="control-btn new-game" id="newGameBtn">重置游戏</button>
-            <button class="control-btn special" id="specialPatternBtn">只有一个灭灯模式</button>
-            <button class="control-btn solve" id="solveBtn">解密步骤</button>
+            <button class="control-btn new-game" id="newGameBtn" aria-label="重置游戏，生成随机新棋盘">重置游戏</button>
+            <button class="control-btn special" id="specialPatternBtn" aria-label="生成只有一个灭灯的特殊模式">只有一个灭灯模式</button>
+            <button class="control-btn solve" id="solveBtn" aria-label="计算并显示解密步骤">解密步骤</button>
         </div>
         <div class="info" id="gameInfo">点击开始游戏</div>
         <div class="board" id="gameBoard"></div>
+        <div style="margin-top:16px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center;">
+            <label for="stateInput" style="font-size:13px; color:#bdc3c7;">快速设置（9位二进制，1=亮 0=灭）：</label>
+            <input type="text" id="stateInput" placeholder="例：101010101" maxlength="9" pattern="[01]{9}" inputmode="numeric" style="width:110px; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:#fff; font-size:14px; text-align:center; outline:none; backdrop-filter:blur(5px);">
+            <button id="applyStateBtn" title="将输入的9位二进制状态应用到棋盘" style="padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(52,152,219,0.7); color:white; cursor:pointer; font-size:13px; backdrop-filter:blur(5px); transition:all 0.2s;">应用</button>
+            <button id="copyStateBtn" title="复制当前棋盘为9位二进制串" style="padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(46,204,113,0.7); color:white; cursor:pointer; font-size:13px; backdrop-filter:blur(5px); transition:all 0.2s;">📋 复制</button>
+        </div>
     </div>
 
     <script>
@@ -345,18 +353,49 @@
             document.getElementById('randomModeBtn').addEventListener('click', function() {
                 gameMode = 'random';
                 document.getElementById('randomModeBtn').classList.add('active');
+                document.getElementById('randomModeBtn').setAttribute('aria-pressed', 'true');
                 document.getElementById('customModeBtn').classList.remove('active');
+                document.getElementById('customModeBtn').setAttribute('aria-pressed', 'false');
                 gameInfoElement.textContent = "赶快练习吧，长达两年半的练习生";
             });
             document.getElementById('customModeBtn').addEventListener('click', function() {
                 gameMode = 'custom';
                 document.getElementById('customModeBtn').classList.add('active');
+                document.getElementById('customModeBtn').setAttribute('aria-pressed', 'true');
                 document.getElementById('randomModeBtn').classList.remove('active');
+                document.getElementById('randomModeBtn').setAttribute('aria-pressed', 'false');
                 gameInfoElement.textContent = "请根据游戏内的格子设置，黄色代表已亮";
             });
             document.getElementById('newGameBtn').addEventListener('click', newRandomGame);
             document.getElementById('specialPatternBtn').addEventListener('click', specialPattern);
             document.getElementById('solveBtn').addEventListener('click', calculateSolution);
+
+            document.getElementById('copyStateBtn').addEventListener('click', function() {
+                const stateStr = lights.map(l => l ? '1' : '0').join('');
+                navigator.clipboard.writeText(stateStr).then(() => {
+                    const orig = this.textContent;
+                    this.textContent = '✅ 已复制';
+                    setTimeout(() => { this.textContent = orig; }, 1500);
+                }).catch(() => {
+                    document.getElementById('stateInput').value = stateStr;
+                    document.getElementById('stateInput').select();
+                });
+            });
+            document.getElementById('applyStateBtn').addEventListener('click', function() {
+                const input = document.getElementById('stateInput').value.trim();
+                if (!/^[01]{9}$/.test(input)) {
+                    gameInfoElement.textContent = '请输入9位二进制数（如 101010101）';
+                    gameInfoElement.style.color = '#ff5252';
+                    return;
+                }
+                lights = input.split('').map(c => c === '1');
+                updateBoard();
+                solutionStepsElement.textContent = '点击解密可获取解密步骤';
+                document.getElementById('customModeBtn').click();
+            });
+            document.getElementById('stateInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('applyStateBtn').click();
+            });
 
             initBoard();
             newRandomGame();

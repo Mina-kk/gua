@@ -3,13 +3,110 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>再见，我们跑路了</title>
+<title>404 — 呱呱 · 页面未找到</title>
+<meta name="description" content="页面不存在，返回呱呱个人引导页">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0 16px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #eee;
+    position: relative;
+    overflow: hidden;
+}
+.bg-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('./img/bj.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px) brightness(0.7);
+    opacity: 0.6;
+    z-index: -2;
+    pointer-events: none;
+}
+.card {
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px) saturate(180%) brightness(0.8);
+    -webkit-backdrop-filter: blur(12px) saturate(180%) brightness(0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 40px 30px;
+    max-width: 400px;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-4px);
+}
+img {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    margin-bottom: 20px;
+    border-radius: 16px;
+}
+h1 {
+    font-size: 5rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.15);
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: 4px;
+}
+h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 24px;
+    color: #bdc3c7;
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 28px;
+    background: rgba(33, 150, 243, 0.8);
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+.btn:hover {
+    background: rgba(33, 150, 243, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(33, 150, 243, 0.3);
+}
+</style>
 </head>
-
 <body>
-<main style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin:0 16px;">
-<img src="./img/pl.gif" width="300" height="300" alt="404提示">
-<h3>是的，正如你所见，我们跑路了</h3>
-</main>
+<div class="bg-layer"></div>
+<div class="card">
+    <img src="./img/pl.gif" alt="404 跑路提示" loading="lazy">
+    <h1>404</h1>
+    <h3>是的，正如你所见，我们跑路了</h3>
+    <a href="./index.html" class="btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        回到首页
+    </a>
+</div>
 </body>
 </html>
